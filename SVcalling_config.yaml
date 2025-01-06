@@ -1,0 +1,19 @@
+# config.yaml
+
+# Absolute path to the genome fasta file
+ref: "" 
+
+# Fastq file suffix
+fastq_suffix: ".fq.gz" # Defualt is ".fq.gz"
+
+# fastp parameters
+qualified_quality_phred: 20
+unqualified_percent_limit: 40
+trim_front: 10
+
+conda_env:
+    delly_conda: "base"
+
+# Sample list
+sample:
+
