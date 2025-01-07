@@ -12,7 +12,7 @@ unqualified_percent_limit: 40
 trim_front: 10
 
 conda_env:
-    delly_conda: "base"
+    delly_conda: "delly"
 
 # Sample list
 sample:

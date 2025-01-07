@@ -4,18 +4,14 @@ import gzip
 configfile: "SVcalling_config.yaml"
 
 # 提取文件名的基部分（去除路径和扩展名）
-ref_basename = os.path.splitext(os.path.basename(config["ref"]))[0]
-fastq_suffix = config.get("fastq_suffix", ".fq.gz")
-
-qualified_quality_phred = config.get("qualified_quality_phred", 20)
-unqualified_percent_limit = config.get("unqualified_percent_limit", 40)
-trim_front = config.get("trim_front", 10)
+ref_basename=os.path.splitext(os.path.basename(config["ref"]))[0]
+fastq_suffix=config.get("fastq_suffix")
 
 rule all:
     input:
-        "vcf/sv/final.bcf",
-        "mapping/merged_depth_stats.txt",
-        "vcf/sv/final.vcf.gz"
+        expand("vcf/sv/germline/{sample}.bcf", sample=config["sample"]),
+        "vcf/sv/final.vcf.gz",
+        "mapping/merged_depth_stats.txt"
 
 rule bwa_index:
     input:
@@ -35,6 +31,7 @@ rule bwa_index:
         {input.reference_genome} \
         2> {log}
         """
+
 rule samtools_fai_index:
     input:
         reference_genome=config["ref"]
@@ -47,6 +44,7 @@ rule samtools_fai_index:
         samtools faidx {input.reference_genome} 2> {log}
         cp {input.reference_genome}.fai {output}
         """
+
 rule gatk_dict_index:
     input:
         reference_genome=config["ref"]
@@ -71,6 +69,10 @@ rule QualityControlfastp:
         "clean_data/{sample}_2_clean.fq.gz",
         "logs/fastp/fastp_report/{sample}.fastp.html"
     threads: 2
+    params:
+        qualified_quality_phred=config["qualified_quality_phred"],
+        unqualified_percent_limit=config["unqualified_percent_limit"],
+        trim_front=config["trim_front"]
     log:
         "logs/fastp/{sample}.log"
     shell:
@@ -83,9 +85,9 @@ rule QualityControlfastp:
         -O {output[1]} \
         -h {output[2]} \
         -j /dev/null \
-        -q {qualified_quality_phred} \
-        -u {unqualified_percent_limit} \
-        -f {trim_front} \
+        -q {params.qualified_quality_phred} \
+        -u {params.unqualified_percent_limit} \
+        -f {params.trim_front} \
         2> {log}
         """
 
@@ -153,13 +155,15 @@ rule MergeDepthStats:
         expand("mapping/{sample}.chr.stat.gz", sample=config["sample"])
     output:
         "mapping/merged_depth_stats.txt"
+    log:
+        "logs/depth/merge_depth_stats.log"
     run:
         with open(output[0], 'w') as out_file:
             for stat_file in input:
-                sample = stat_file.split("/")[-1].split(".")[0]
+                sample=stat_file.split("/")[-1].split(".")[0]
                 with gzip.open(stat_file, 'rt') as f: 
-                    last_line = f.readlines()[-1].strip()
-                    out_file.write(f"{sample}\t{last_line}\n") 
+                    last_line=f.readlines()[-1].strip()
+                    out_file.write(f"{sample}\t{last_line}\n")
 
 rule DellyIndividualSVcalling:
     input:
