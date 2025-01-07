@@ -81,7 +81,8 @@ For example:
 
 ```shell
 snakemake \
-	--snakefile ${working_dir}/00-script/snake_pipeline/${snakemake_file} \
+	--snakefile ${snakefile} \
 	-d ${working_dir} \
-	--cores ${cores_num}
+	--cores ${cores_num} \
+    --use-conda
 ```
